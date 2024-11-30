@@ -1,47 +1,53 @@
-const cacheName = 'landed-site-cache-v1';
-const assetsToCache = [
+const CACHE_NAME = 'site-cache-v1';
+const urlsToCache = [
     '/',
     '/index.html',
     '/element.html',
     '/left-sidebar.html',
     '/no-sidebar.html',
     '/right-sidebar.html',
-    '/assets/css/main.css', // Update the path for your CSS file
-    '/assets/css/noscript.css',
-    '/assets/css/fontawesome.css',
-    '/assets/js/script.js', // Update the path for your JS file
-    '/assets/images/logo.png', // Add other images here
+    '/assets/css/main.css',
+    '/assets/js/main.js',
+    '/images/pic01.jpg',
+    '/images/pic02.jpg',
+    '/images/pic03.jpg',
+    '/images/pic04.jpg'
 ];
 
-// Install Event: Cache Files
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(cacheName).then((cache) => {
-      return cache.addAll(assetsToCache);
-    })
-  );
+// Install the Service Worker
+self.addEventListener('install', event => {
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then(cache => {
+                console.log('Opened cache');
+                return cache.addAll(urlsToCache);
+            })
+    );
 });
 
-// Fetch Event: Serve Cached Content When Offline
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
-  );
+// Fetch from Cache
+self.addEventListener('fetch', event => {
+    event.respondWith(
+        caches.match(event.request)
+            .then(response => {
+                // Return the cached version or fetch from the network
+                return response || fetch(event.request);
+            })
+    );
 });
 
-// Activate Event: Clean Up Old Caches
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== cacheName) {
-            return caches.delete(cache);
-          }
+// Update Service Worker and Clear Old Cache
+self.addEventListener('activate', event => {
+    const cacheWhitelist = [CACHE_NAME];
+    event.waitUntil(
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cacheName => {
+                    if (!cacheWhitelist.includes(cacheName)) {
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
         })
-      );
-    })
-  );
+    );
 });
