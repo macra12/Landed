@@ -63,3 +63,23 @@ self.addEventListener('fetch', (event) => {
         })
     );
     });
+self.addEventListener('fetch', (event) => {
+    event.respondWith(
+        caches.match(event.request).then((response) => {
+        return (
+            response ||
+            fetch(event.request).then((networkResponse) => {
+            return caches.open(CACHE_NAME).then((cache) => {
+                cache.put(event.request, networkResponse.clone());
+                return networkResponse;
+            });
+            })
+        );
+        }).catch(() => {
+        // Fallback to index.html for navigation requests
+        if (event.request.mode === 'navigate') {
+            return caches.match('/index.html');
+        }
+        })
+    );
+});
