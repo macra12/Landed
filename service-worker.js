@@ -1,53 +1,65 @@
+// Name of the cache
 const CACHE_NAME = 'site-cache-v1';
-const urlsToCache = [
+
+// Files to cache
+const FILES_TO_CACHE = [
     '/',
     '/index.html',
-    '/element.html',
     '/left-sidebar.html',
-    '/no-sidebar.html',
     '/right-sidebar.html',
+    '/no-sidebar.html',
+    '/elements.html',
     '/assets/css/main.css',
+    '/assets/css/noscript.css',
     '/assets/js/main.js',
+    '/assets/js/util.js',
+    '/assets/js/jquery.min.js',
+    '/assets/js/jquery.scrolly.min.js',
+    '/assets/js/jquery.dropotron.min.js',
+    '/assets/js/jquery.scrollex.min.js',
+    '/assets/js/browser.min.js',
+    '/assets/js/breakpoints.min.js',
     '/images/pic01.jpg',
     '/images/pic02.jpg',
     '/images/pic03.jpg',
-    '/images/pic04.jpg'
+    '/images/pic04.jpg',
 ];
 
 // Install the Service Worker
-self.addEventListener('install', event => {
+self.addEventListener('install', (event) => {
+    console.log('[ServiceWorker] Install');
     event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => {
-                console.log('Opened cache');
-                return cache.addAll(urlsToCache);
-            })
-    );
-});
-
-// Fetch from Cache
-self.addEventListener('fetch', event => {
-    event.respondWith(
-        caches.match(event.request)
-            .then(response => {
-                // Return the cached version or fetch from the network
-                return response || fetch(event.request);
-            })
-    );
-});
-
-// Update Service Worker and Clear Old Cache
-self.addEventListener('activate', event => {
-    const cacheWhitelist = [CACHE_NAME];
-    event.waitUntil(
-        caches.keys().then(cacheNames => {
-            return Promise.all(
-                cacheNames.map(cacheName => {
-                    if (!cacheWhitelist.includes(cacheName)) {
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
+        caches.open(CACHE_NAME).then((cache) => {
+        console.log('[ServiceWorker] Caching app shell');
+        return cache.addAll(FILES_TO_CACHE);
         })
     );
 });
+
+// Activate the Service Worker
+self.addEventListener('activate', (event) => {
+    console.log('[ServiceWorker] Activate');
+    event.waitUntil(
+        caches.keys().then((keyList) => {
+        return Promise.all(
+            keyList.map((key) => {
+            if (key !== CACHE_NAME) {
+                console.log('[ServiceWorker] Removing old cache', key);
+                return caches.delete(key);
+            }
+            })
+        );
+        })
+    );
+    return self.clients.claim();
+    });
+
+// Fetch Event
+self.addEventListener('fetch', (event) => {
+    console.log('[ServiceWorker] Fetch', event.request.url);
+    event.respondWith(
+        caches.match(event.request).then((response) => {
+        return response || fetch(event.request);
+        })
+    );
+    });
